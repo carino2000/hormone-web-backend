@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### App config (DB 계정정보 등 포함) ###
+src/main/resources/application.yaml
