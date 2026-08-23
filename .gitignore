@@ -36,5 +36,12 @@ out/
 ### VS Code ###
 .vscode/
 
-### App config (DB 계정정보 등 포함) ###
-src/main/resources/application.yaml
+### 로컬 시크릿 (DB 비밀번호 / API 키) ###
+### application.yaml 은 모든 값이 ${ENV:기본값} 형태라 커밋한다.
+### 실제 값은 application-local.yaml 에만 두고 절대 커밋하지 않는다.
+# ⚠️ 커밋하지 않는다. 실제 DB 비밀번호와 Anthropic API 키가 들어 있다.
+#    저장소가 public 이고, GitHub push protection 이 Anthropic 키를 실제로 차단했다
+#    (GH013 - Push cannot contain secrets).
+#    다른 기기에서는 .example 을 복사해 값을 채운다 (PROJECT_HANDOFF.md §2-2).
+src/main/resources/application-local.yaml
+!src/main/resources/application-local.yaml.example

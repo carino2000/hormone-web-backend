@@ -1,0 +1,26 @@
+# ============================================================================
+# 로컬 개발용 설정 템플릿.
+#
+#   1) 이 파일을 같은 폴더에 application-local.yaml 로 복사한다
+#   2) 아래 값을 본인 환경에 맞게 채운다
+#
+# application-local.yaml 은 .gitignore 처리되어 커밋되지 않는다.
+# 이 .example 파일에는 **절대 실제 값을 쓰지 말 것.**
+# ============================================================================
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/hormone_web
+    username: root
+    password: 여기에_본인_MySQL_비밀번호
+
+app:
+  model:
+    # 파이썬 예측 서버가 준비되면 true 로 바꾸고 base-url 을 채운다.
+    # false 면 백엔드 내장 MockPredictionClient 가 동작한다 (파이썬 불필요).
+    enabled: false
+    base-url: http://127.0.0.1:5000
+
+# L-07(의학 어드바이스) 기능을 구현할 때만 필요. 그전까지는 비워둬도 된다.
+anthropic:
+  api-key: 여기에_Anthropic_API_키

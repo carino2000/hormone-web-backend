@@ -1,147 +1,241 @@
 package com.sixletter.hormone_web_backend.service;
 
+import com.sixletter.hormone_web_backend.dto.PredictionDto;
+import com.sixletter.hormone_web_backend.dto.PredictionEventDto;
+import com.sixletter.hormone_web_backend.dto.model.ModelPredictRequest;
+import com.sixletter.hormone_web_backend.dto.model.ModelPredictResponse;
+import com.sixletter.hormone_web_backend.entity.Contribution;
+import com.sixletter.hormone_web_backend.entity.CyclePhase;
+import com.sixletter.hormone_web_backend.entity.JobStatus;
+import com.sixletter.hormone_web_backend.entity.PredictionJob;
+import com.sixletter.hormone_web_backend.entity.PredictionResult;
+import com.sixletter.hormone_web_backend.entity.User;
 import com.sixletter.hormone_web_backend.entity.WearableDaily;
-import java.util.LinkedHashMap;
+import com.sixletter.hormone_web_backend.repository.PredictionJobRepository;
+import com.sixletter.hormone_web_backend.repository.PredictionResultRepository;
+import com.sixletter.hormone_web_backend.repository.WearableDailyRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 /**
- * WearableDaily 데이터를 파이썬 예측 서버로 전달하는 서비스.
+ * 예측 파이프라인.
  *
- * <p>데이터 출처(사용자 요청 바디에서 바로 만든 WearableDaily 인지, DB에서 조회한
- * WearableDaily 인지)는 이 서비스가 신경쓰지 않는다. 호출하는 쪽에서 WearableDaily
- * 객체 하나만 만들어서 {@link #requestPrediction(Long, WearableDaily)} 에 넘기면 된다.
+ * <pre>
+ *   prediction_job 을 PENDING 으로 기록
+ *     -> PredictionClient 호출 (파이썬 or Mock)
+ *     -> 응답 파싱 -> prediction_result 에 <b>병합 저장</b>
+ *     -> job 을 SUCCEEDED 로
+ *     -> WebSocket 으로 PREDICTION_READY push
+ *   실패하면 job 을 FAILED 로 남기고 PREDICTION_FAILED push
+ * </pre>
  *
- * <p>파이썬 서버 호출이 오래 걸릴 수 있어 LongTaskService 와 같은 패턴으로
- * @Async 백그라운드 실행 + 완료 시 웹소켓 push 방식을 사용한다. 즉 컨트롤러는
- * 호출만 하고 바로 응답을 반환하며, 실제 예측 결과/실패는 나중에
- * "/topic/prediction/{userId}" 구독자에게 비동기로 전달된다.
+ * <p>파이썬 호출이 오래 걸릴 수 있어 {@code @Async} 백그라운드로 돈다.
+ * 컨트롤러는 호출만 하고 즉시 202 를 반환한다.
  *
- * ============================================================================
- * [ 아래 항목은 실제 연동 전에 반드시 직접 확인/수정할 것 ]
- *
- *   1) PYTHON_PREDICT_URL - 실제 파이썬 서버 주소/포트/경로로 교체
- *   2) PREDICTION_TOPIC_PREFIX - 프론트와 합의된 실제 웹소켓 토픽 규칙인지 확인
- *      (config/WebSocketConfig 의 엔드포인트 경로("/ws")도 함께 확인)
- *   3) 응답 파싱 부분 (.body(String.class)) - 지금은 러프하게 String 하나로만 받음.
- *      실제 응답 JSON 구조 확정되면 정제(파싱) 로직 + 전용 응답 DTO로 교체 필요.
- *   4) 정적 피처 3개(birth_year, age_of_first_menarche, ethnicity) 미포함
- *      - 이번에 전달받은 컬럼 목록(요청 파라미터)에는 없어서 이 서비스에서는 뺐음.
- *        모델이 실제로 이 3개를 함께 요구한다면 users 테이블과 조인해서
- *        toModelFeatures() 결과 Map 에 추가로 채워야 함.
- *   5) 예측 결과/실패 여부 DB 저장 로직 미구현 (TODO 표시된 지점에서 작업 예정)
- *      - 지금은 웹소켓 push만 함. 저장할 테이블/컬럼 설계 후 requestPrediction() 안의
- *        TODO 위치에 정제 + 저장 코드 추가.
- *   6) 인증 방식(API Key, 사설망 등) 필요 여부 확인 - 현재 헤더 없음.
- * ============================================================================
+ * <p><b>슈퍼셋 가정(규칙 10) 적용 지점</b>
+ * <ul>
+ *   <li>응답에 없는 필드는 null 로 두고, 기존 행의 값을 <b>지우지 않는다</b>
+ *       ({@link PredictionResult#mergeFrom})</li>
+ *   <li>알 수 없는 phase 라벨이 와도 예외를 던지지 않고 phase 만 비운다</li>
+ *   <li>우리가 매핑하지 않은 필드는 {@code raw_response} 에 통째로 남는다</li>
+ * </ul>
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HormonePredictionService {
 
-    // ---------------------------------------------------------------------
-    // ↓↓↓ 확인 필요: 파이썬 예측 서버 주소 / 웹소켓 토픽 규칙 ↓↓↓
-    // RestClient 빈 자체는 config/RestClientConfig 에서 등록함.
-    // ---------------------------------------------------------------------
-    private static final String PYTHON_PREDICT_URL = "http://127.0.0.1:5000/predict"; // TODO: 실제 주소/포트/경로로 교체
-    private static final String PREDICTION_TOPIC_PREFIX = "/topic/prediction/";        // TODO: 프론트와 합의된 토픽 규칙으로 교체
-    // ---------------------------------------------------------------------
-
-    private final RestClient restClient;
+    private final PredictionClient predictionClient;
+    private final ModelInputBuilder modelInputBuilder;
+    private final WearableDailyRepository wearableDailyRepository;
+    private final PredictionResultRepository predictionResultRepository;
+    private final PredictionJobRepository predictionJobRepository;
     private final SimpMessagingTemplate template;
+    private final ObjectMapper objectMapper;
+
+    @Value("${app.ws.prediction-topic-prefix:/topic/prediction/}")
+    private String topicPrefix;
 
     /**
-     * WearableDaily 데이터를 모델 피처명으로 변환해 파이썬 서버에 예측 요청을 보낸다.
-     * 백그라운드(taskExecutor)에서 실행되며, 완료/실패 결과는 이 메서드의 리턴값이 아니라
-     * "/topic/prediction/{userId}" 웹소켓 push 로 전달된다. 컨트롤러는 이 메서드를
-     * 호출한 뒤 바로 응답(예: 202 Accepted)을 반환하면 됨.
+     * 예측을 백그라운드로 실행하고 결과를 WebSocket 으로 보낸다.
+     *
+     * @param dayInStudy 화면 표시용 일차. 모델 입력으로는 보내지 않는다(엑셀 초록색)
      */
     @Async("taskExecutor")
-    public void requestPrediction(Long userId, WearableDaily data) {
-        Map<String, Object> requestBody = toModelFeatures(data);
+    public void requestPrediction(User user, LocalDate targetDate, Integer dayInStudy) {
+        Long userId = user.getId();
+        PredictionJob job = predictionJobRepository.save(PredictionJob.builder()
+                .userId(userId)
+                .targetDate(targetDate)
+                .status(JobStatus.PENDING)
+                .startedAt(LocalDateTime.now())
+                .build());
 
         try {
-            // 러프하게 응답을 String 하나로 받는다고 가정. 실제 응답 구조(JSON/필드) 확정되면 DTO로 교체.
-            String result = restClient.post()
-                    .uri(PYTHON_PREDICT_URL)
-                    .body(requestBody)
-                    .retrieve()
-                    .body(String.class);
+            List<WearableDaily> history = wearableDailyRepository
+                    .findByUserIdAndMeasuredOnBetweenOrderByMeasuredOnDesc(
+                            userId, targetDate.minusYears(2), targetDate);
+            if (history.isEmpty()) {
+                throw new IllegalStateException("예측할 웨어러블 데이터가 없습니다: " + targetDate);
+            }
 
-            // TODO: 여기서 result 정제(파싱) + DB 저장 로직 작성 예정 (본인 작업)
+            ModelPredictRequest request = modelInputBuilder.build(user, history, targetDate);
+            job.setRequestPayload(toMap(request));
 
-            template.convertAndSend(PREDICTION_TOPIC_PREFIX + userId, result);
+            ModelPredictResponse response = predictionClient.predict(request);
+            if (response == null) {
+                throw new IllegalStateException("예측 서버가 null 을 반환했습니다");
+            }
+            if (response.hasError()) {
+                throw new IllegalStateException(
+                        "예측 서버 오류: " + response.error().code() + " - " + response.error().message());
+            }
+
+            PredictionResult saved = saveResult(user, targetDate, dayInStudy, response);
+            job.markSucceeded(predictionClient.lastRawBody());
+            predictionJobRepository.save(job);
+
+            log.info("예측 완료: userId={} date={} day={} phase={} client={} ({}ms)",
+                    userId, targetDate, dayInStudy, saved.getPhase(), predictionClient.name(), job.getLatencyMs());
+
+            send(PredictionEventDto.ready(userId, dayInStudy, targetDate, PredictionDto.from(saved)));
+
         } catch (Exception e) {
-            // TODO: 로깅 프레임워크(slf4j 등)로 교체 권장 - 지금은 콘솔 출력만 함
-            e.printStackTrace();
-            // TODO: 실패 케이스도 DB에 남길지 결정 후 저장 로직 작성 예정 (본인 작업)
-            template.convertAndSend(
-                    PREDICTION_TOPIC_PREFIX + userId,
-                    (Object) Map.of("status", "FAILED", "message", e.getMessage()));
+            log.error("예측 실패: userId={} date={} client={}", userId, targetDate, predictionClient.name(), e);
+            job.markFailed(e);
+            job.setResponseBody(predictionClient.lastRawBody());
+            predictionJobRepository.save(job);
+
+            send(PredictionEventDto.failed(userId, dayInStudy, targetDate,
+                    "MODEL_UNAVAILABLE", "예측 서버에 연결할 수 없습니다."));
         }
     }
 
     /**
-     * DB 컬럼명 -> 모델이 학습된 원본 CSV 피처명으로 변환.
-     * 순서와 키 이름은 모델 학습 시 사용한 피처 목록 그대로 맞춤.
+     * 예측 결과를 (user, 날짜) 행에 <b>병합 저장</b>한다.
      *
-     * TODO: 지금은 Map으로 임시 변환. DTO 또는 별도 엔티티로 교체 예정 (본인 작업)
+     * <p>덮어쓰기가 아니라 병합인 이유: 호르몬마다 모델이 따로 돌면 응답이 쪼개져 온다.
+     * 나중 응답이 앞 응답을 지우면 안 된다.
      */
-    private Map<String, Object> toModelFeatures(WearableDaily d) {
-        Map<String, Object> f = new LinkedHashMap<>();
+    @Transactional
+    protected PredictionResult saveResult(User user, LocalDate targetDate, Integer dayInStudy,
+                                          ModelPredictResponse response) {
+        PredictionResult incoming = toEntity(user, targetDate, dayInStudy, response);
 
-        f.put("sedentary", d.getSedentary());
-        f.put("lightly", d.getLightly());
-        f.put("moderately", d.getModerately());
-        f.put("very", d.getVery());
-        f.put("FAT_BURN", d.getFatBurn());
-        f.put("CARDIO", d.getCardio());
-        f.put("PEAK", d.getPeak());
-        f.put("altitude", d.getAltitude());
-        f.put("calories", d.getCalories());
-        f.put("temperature_samples", d.getTemperatureSamples());
-        f.put("nightly_temperature", d.getNightlyTemperature());
-        f.put("filtered_demographic_vo2_max", d.getFilteredDemographicVo2Max());
-        f.put("spo2_variation_std", d.getSpo2VariationStd());
-        f.put("originalduration", d.getOriginalduration());
-        f.put("averageheartrate", d.getAverageheartrate());
-        f.put("exercise_calories", d.getExerciseCalories());
-        f.put("steps", d.getSteps());
-        f.put("glucose_mean", d.getGlucoseMean());
-        f.put("glucose_std", d.getGlucoseStd());
-        f.put("bpm", d.getBpm());
-        f.put("bpm_min", d.getBpmMin());
-        f.put("bpm_max", d.getBpmMax());
-        f.put("rmssd", d.getRmssd());
-        f.put("low_frequency", d.getLowFrequency());
-        f.put("high_frequency", d.getHighFrequency());
-        f.put("full_sleep_breathing_rate", d.getFullSleepBreathingRate());
-        f.put("deep_sleep_breathing_rate", d.getDeepSleepBreathingRate());
-        f.put("light_sleep_breathing_rate", d.getLightSleepBreathingRate());
-        f.put("rem_sleep_breathing_rate", d.getRemSleepBreathingRate());
+        PredictionResult target = predictionResultRepository
+                .findByUserIdAndTargetDate(user.getId(), targetDate)
+                .orElse(null);
 
-        // ※ 이름이 서로 엇갈리는 필드 (WearableDaily 클래스 주석 참고) - 헷갈리기 쉬우니 재확인할 것
-        f.put("value", d.getRestingHeartRate());                    // DB: resting_heart_rate       -> 모델: value
-        f.put("resting_heart_rate", d.getSleepRestingHeartRate());  // DB: sleep_resting_heart_rate -> 모델: resting_heart_rate
+        if (target == null) {
+            return predictionResultRepository.save(incoming);
+        }
+        target.mergeFrom(incoming);
+        return predictionResultRepository.save(target);
+    }
 
-        f.put("minutesasleep", d.getMinutesasleep());
-        f.put("efficiency", d.getEfficiency());
-        f.put("minutesawake", d.getMinutesawake());
-        f.put("nap_minutes_total", d.getNapMinutesTotal());
-        f.put("overall_score", d.getOverallScore());
-        f.put("deep_sleep_in_minutes", d.getDeepSleepInMinutes());
-        f.put("restlessness", d.getRestlessness());
-        f.put("stress_score", d.getStressScore());
-        f.put("in_default_zone_3", d.getInDefaultZone3());
-        f.put("in_default_zone_2", d.getInDefaultZone2());
-        f.put("in_default_zone_1", d.getInDefaultZone1());
-        f.put("below_default_zone_1", d.getBelowDefaultZone1());
-        f.put("temperature_diff_from_baseline", d.getTemperatureDiffFromBaseline());
+    private PredictionResult toEntity(User user, LocalDate targetDate, Integer dayInStudy,
+                                      ModelPredictResponse r) {
+        var b = PredictionResult.builder()
+                .user(user)
+                .targetDate(targetDate)
+                .dayInStudy(dayInStudy)
+                .modelVersion(r.modelVersion())
+                .rawResponse(toMap(r));
 
-        return f;
+        if (r.hormones() != null) {
+            b.lh(value(r.hormones().lh()))
+                    .estrogen(value(r.hormones().estrogen()))
+                    .pdg(value(r.hormones().pdg()))
+                    .lhConfidence(confidence(r.hormones().lh()))
+                    .estrogenConfidence(confidence(r.hormones().estrogen()))
+                    .pdgConfidence(confidence(r.hormones().pdg()));
+        }
+
+        if (r.phase() != null) {
+            // 모르는 라벨이 와도 예외를 던지지 않는다. phase 만 비고 나머지는 저장된다.
+            CyclePhase parsed = CyclePhase.fromLabel(r.phase().label()).orElse(null);
+            if (parsed == null && r.phase().label() != null) {
+                log.warn("알 수 없는 phase 라벨 '{}' — phase 를 비우고 나머지만 저장합니다. userId={} date={}",
+                        r.phase().label(), user.getId(), targetDate);
+            }
+            b.phase(parsed)
+                    .phaseConfidence(r.phase().confidence())
+                    .phaseProbabilities(r.phase().probabilities());
+        }
+
+        if (r.nextPeriod() != null) {
+            b.nextPeriodDate(r.nextPeriod().predictedDate())
+                    .nextPeriodRangeStart(r.nextPeriod().rangeStart())
+                    .nextPeriodRangeEnd(r.nextPeriod().rangeEnd());
+        }
+
+        if (r.contributions() != null && !r.contributions().isEmpty()) {
+            b.contributions(r.contributions().stream()
+                    .map(c -> new Contribution(c.feature(), c.weight(), c.direction(), c.signal()))
+                    .toList());
+        }
+
+        return b.build();
+    }
+
+    private BigDecimal value(ModelPredictResponse.HormoneValue v) {
+        return v == null ? null : v.value();
+    }
+
+    private BigDecimal confidence(ModelPredictResponse.HormoneValue v) {
+        return v == null ? null : v.confidence();
+    }
+
+    /** 콜드스타트 구간에서 "아직 수집 중"임을 프론트에 알린다. */
+    public void notifyCollecting(Long userId, int day, LocalDate date) {
+        send(PredictionEventDto.collecting(userId, day, date));
+    }
+
+    public void notifyPending(Long userId, int day, LocalDate date) {
+        send(PredictionEventDto.pending(userId, day, date));
+    }
+
+    /** WebSocket push. 실패해도 예측 자체는 이미 DB 에 있으므로 로그만 남기고 삼킨다. */
+    private void send(PredictionEventDto event) {
+        try {
+            template.convertAndSend(topicPrefix + event.userId(), event);
+        } catch (Exception e) {
+            log.warn("WebSocket push 실패 (예측 결과는 DB 에 저장됨): userId={} type={}",
+                    event.userId(), event.type(), e);
+        }
+    }
+
+    /**
+     * 로그/보관용 JSON 변환.
+     *
+     * <p>주입받은 전역 ObjectMapper 를 쓰면 안 된다. application.yaml 의
+     * {@code jackson.default-property-inclusion: NON_NULL} 때문에 <b>결측 피처가
+     * 통째로 사라진 채</b> 기록되어, prediction_job 을 보고도 "실제로 뭘 보냈는지"를
+     * 알 수 없게 된다. 그래서 null 을 남기는 전용 매퍼를 쓴다.
+     */
+    private static final ObjectMapper LOG_MAPPER = tools.jackson.databind.json.JsonMapper.builder()
+            .changeDefaultPropertyInclusion(incl ->
+                    incl.withValueInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS))
+            .build();
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> toMap(Object o) {
+        try {
+            return LOG_MAPPER.convertValue(o, Map.class);
+        } catch (Exception e) {
+            log.warn("JSON 변환 실패 — 해당 필드는 비워 둡니다: {}", e.getMessage());
+            return null;
+        }
     }
 }

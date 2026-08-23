@@ -1,5 +1,6 @@
 package com.sixletter.hormone_web_backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -7,21 +8,27 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 /**
- * STOMP 브로커 설정. HormonePredictionService 가 SimpMessagingTemplate 으로
- * 예측 결과를 "/topic/..." 구독자에게 push 할 때 이 브로커를 탄다.
+ * STOMP 브로커. 예측 결과가 {@code /topic/prediction/{userId}} 로 push 된다.
  *
- * ↓↓↓ 확인 필요 ↓↓↓
- *   - 프론트가 접속할 엔드포인트 경로("/ws")가 실제 합의된 경로인지 확인
- *   - setAllowedOriginPatterns("*") 는 개발용. 운영 배포 전 실제 프론트 도메인으로 제한할 것
+ * <p>SockJS 는 켜지 않는다 — 프론트가 네이티브 WebSocket(@stomp/stompjs)으로 붙는다.
+ * 켜려면 프론트에 sockjs-client 도 같이 추가해야 하므로 양쪽을 함께 바꿀 것.
+ *
+ * <p>TODO: 운영 배포 전 setAllowedOriginPatterns 를 실제 도메인으로 제한할 것.
  */
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    @Value("${app.ws.endpoint:/ws}")
+    private String endpoint;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private String[] allowedOrigins;
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws") // TODO: 실제 웹소켓 접속 경로 확인
-                .setAllowedOriginPatterns("*"); // TODO: 운영 환경 CORS 정책으로 교체
+        registry.addEndpoint(endpoint)
+                .setAllowedOriginPatterns(allowedOrigins);
     }
 
     @Override
