@@ -81,11 +81,9 @@ class PredictionPersistenceTest {
                 .pdg(new BigDecimal("4.599"))
                 .phase(CyclePhase.FERTILITY)
                 .phaseConfidence(new BigDecimal("0.780"))
-                .phaseProbabilities(Map.of(
-                        "Menstrual", new BigDecimal("0.020"),
-                        "Fertility", new BigDecimal("0.780")))
                 .contributions(List.of(
-                        new Contribution("rmssd", new BigDecimal("0.34"), "down", "HRV 감소"),
+                        // ★ 후행 0 을 일부러 넣는다. 아래 scale 검증용
+                        new Contribution("rmssd", new BigDecimal("0.340"), "down", "HRV 감소"),
                         new Contribution("value", new BigDecimal("0.18"), "up", "안정시 심박 상승")))
                 .rawResponse(raw)
                 .build());
@@ -94,16 +92,20 @@ class PredictionPersistenceTest {
 
         assertThat(found.getContributions()).hasSize(2);
         assertThat(found.getContributions().get(0).feature()).isEqualTo("rmssd");
-        assertThat(found.getContributions().get(0).weight()).isEqualByComparingTo("0.34");
+        assertThat(found.getContributions().get(0).weight()).isEqualByComparingTo("0.340");
         assertThat(found.getContributions().get(0).direction()).isEqualTo("down");
         assertThat(found.getContributions().get(0).signal()).isEqualTo("HRV 감소");
 
-        // ★ JSON 컬럼은 BigDecimal 의 scale 을 보존하지 않는다 (0.780 -> 0.78).
-        //   DECIMAL 컬럼(lh/estrogen 등)은 스키마에 scale 이 박혀 있어 보존되지만,
-        //   JSON 안의 숫자는 그냥 숫자라 후행 0 이 사라진다.
-        //   따라서 JSON 안의 수치는 equals 가 아니라 compareTo 로 비교할 것.
-        assertThat(found.getPhaseProbabilities().get("Fertility")).isEqualByComparingTo("0.780");
-        assertThat(found.getPhaseProbabilities().get("Menstrual")).isEqualByComparingTo("0.020");
+        // ★ JSON 컬럼은 BigDecimal 의 scale 을 보존하지 않는다 (0.340 -> 0.34).
+        //   DECIMAL 컬럼(lh/estrogen/phase_confidence)은 스키마에 scale 이 박혀 있어
+        //   보존되지만, JSON(contributions/raw_response) 안의 숫자는 그냥 숫자라
+        //   후행 0 이 사라진다. 그래서 equals 가 아니라 compareTo 로 비교해야 한다.
+        assertThat(found.getContributions().get(0).weight())
+                .isNotEqualTo(new BigDecimal("0.340"))      // scale 이 달라 equals 는 실패
+                .isEqualByComparingTo(new BigDecimal("0.340")); // 값은 같다
+
+        // DECIMAL 컬럼은 반대로 scale 이 보존된다
+        assertThat(found.getPhaseConfidence()).isEqualByComparingTo("0.780");
 
         // 슈퍼셋 가정: 우리가 모르는 필드도 raw_response 에 살아남아야 한다
         assertThat(found.getRawResponse()).containsEntry("우리가_아직_매핑안한_필드", "이것도 버려지면 안 된다");

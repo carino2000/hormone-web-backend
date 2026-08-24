@@ -17,7 +17,7 @@ spring:
 app:
   model:
     # 파이썬 예측 서버가 준비되면 true 로 바꾸고 base-url 을 채운다.
-    # false 면 백엔드 내장 MockPredictionClient 가 동작한다 (파이썬 불필요).
+    # ⚠️ 내장 Mock 을 제거했다. 이 주소의 파이썬 서버가 살아 있어야 예측이 나온다.
     enabled: false
     base-url: http://127.0.0.1:5000
 

@@ -145,23 +145,18 @@ CREATE TABLE IF NOT EXISTS prediction_result (
     target_date             DATE         NOT NULL,
     day_in_study            INT          NULL,
 
-    -- 호르몬 3종 + 개별 신뢰도
+    -- 호르몬 3종
     lh                      DECIMAL(8,3) NULL,
     estrogen                DECIMAL(8,3) NULL,
     pdg                     DECIMAL(8,3) NULL,
-    lh_confidence           DECIMAL(4,3) NULL,
-    estrogen_confidence     DECIMAL(4,3) NULL,
-    pdg_confidence          DECIMAL(4,3) NULL,
 
     -- 주기 단계. Menstrual | Follicular | Fertility | Luteal 4개만 허용
     phase                   VARCHAR(16)  NULL,
+    -- 모델이 확신도를 하나만 준다. 호르몬별 확신도와 phase 확률분포는 계약에 없어서 뺐다.
     phase_confidence        DECIMAL(4,3) NULL,
-    phase_probabilities     JSON         NULL,
 
-    -- 다음 월경 예정일 (점이 아니라 범위로 다룬다)
-    next_period_date        DATE         NULL,
-    next_period_range_start DATE         NULL,
-    next_period_range_end   DATE         NULL,
+    -- 다음 월경 예정일은 받지 않는다. 모델이 오늘자 phase 만 알 수 있어서 합의 하에 제외했다.
+    -- 되살리려면 next_period_date / _range_start / _range_end 를 다시 추가할 것.
 
     -- 예측 근거 [{feature, weight, direction}, ...]
     contributions           JSON         NULL,
@@ -221,7 +216,7 @@ CREATE TABLE IF NOT EXISTS demo_session (
 -- wearable_daily 로 옮긴다. 그래야 "수집이 진행되는 느낌"이 DB 에서도 실제로 재현된다.
 --
 -- truth 는 실측 정답 라벨(phase/lh/estrogen/pdg)이다.
--- ★ 절대 모델 입력으로 보내지 말 것. Mock Predictor 참조용 + 시연 후 정확도 비교용.
+-- ★ 절대 모델 입력으로 보내지 말 것. 시연 후 정확도 비교(채점) 전용이다.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS demo_seed_wearable (
     id        BIGINT NOT NULL AUTO_INCREMENT,
@@ -231,4 +226,46 @@ CREATE TABLE IF NOT EXISTS demo_seed_wearable (
     truth     JSON   NULL,                                      -- 실측 정답 라벨
     PRIMARY KEY (id),
     UNIQUE KEY uk_seed_user_day (user_id, day_index)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ---------------------------------------------------------------------------
+-- daily_advice — Claude API 로 받은 "오늘의 조언". 하루 1건.
+--
+-- 왜 저장하나: 같은 날짜를 다시 열 때 재호출하지 않기 위해서다. 호출당 1만 토큰이라
+-- 화면을 옮길 때마다 다시 부르면 비용이 그대로 곱해진다. UNIQUE 로 하루 1건을 강제한다.
+--
+-- 실패도 남긴다(status=FAILED). 시연 중 조언이 안 뜰 때 원인을 찾을 수 있어야 한다.
+--
+-- ★ 프롬프트 원문은 저장하지 않는다. 최근 30일 웨어러블이 통째로 들어가서 한 건이
+--   30KB 가 넘고, 어차피 시드에서 언제든 재구성할 수 있다. 대신 무엇을 보냈는지
+--   요약(sent_days / sent_features)만 남긴다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS daily_advice (
+    id             BIGINT       NOT NULL AUTO_INCREMENT,
+    user_id        BIGINT       NOT NULL,
+    target_date    DATE         NOT NULL,
+    day_in_study   INT          NULL,
+
+    status         VARCHAR(16)  NOT NULL,                       -- PENDING | SUCCEEDED | FAILED
+    content        MEDIUMTEXT   NULL,                           -- 조언 본문 (마크다운)
+    error_message  TEXT         NULL,
+
+    -- 무엇을 보냈나 (프롬프트 원문 대신)
+    sent_days      INT          NULL,                           -- 최근 며칠치를 보냈나
+    sent_features  INT          NULL,                           -- 하루당 피처 개수
+
+    model          VARCHAR(64)  NULL,                           -- 예 claude-sonnet-5
+    input_tokens   INT          NULL,
+    output_tokens  INT          NULL,
+    latency_ms     INT          NULL,
+    -- max_tokens 에 걸려 문장 중간에서 잘렸는지. 화면이 "잘림" 표시를 띄운다.
+    truncated      BOOLEAN      NOT NULL DEFAULT FALSE,
+
+    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_advice_user_date (user_id, target_date),
+    CONSTRAINT fk_advice_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT ck_advice_status CHECK (status IN ('PENDING', 'SUCCEEDED', 'FAILED'))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

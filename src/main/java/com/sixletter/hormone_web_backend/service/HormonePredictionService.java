@@ -1,5 +1,6 @@
 package com.sixletter.hormone_web_backend.service;
 
+import com.sixletter.hormone_web_backend.config.ModelProperties;
 import com.sixletter.hormone_web_backend.dto.PredictionDto;
 import com.sixletter.hormone_web_backend.dto.PredictionEventDto;
 import com.sixletter.hormone_web_backend.dto.model.ModelPredictRequest;
@@ -10,11 +11,8 @@ import com.sixletter.hormone_web_backend.entity.JobStatus;
 import com.sixletter.hormone_web_backend.entity.PredictionJob;
 import com.sixletter.hormone_web_backend.entity.PredictionResult;
 import com.sixletter.hormone_web_backend.entity.User;
-import com.sixletter.hormone_web_backend.entity.WearableDaily;
 import com.sixletter.hormone_web_backend.repository.PredictionJobRepository;
 import com.sixletter.hormone_web_backend.repository.PredictionResultRepository;
-import com.sixletter.hormone_web_backend.repository.WearableDailyRepository;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,7 +31,7 @@ import tools.jackson.databind.ObjectMapper;
  *
  * <pre>
  *   prediction_job 을 PENDING 으로 기록
- *     -> PredictionClient 호출 (파이썬 or Mock)
+ *     -> PredictionClient 호출 (파이썬 예측 서버)
  *     -> 응답 파싱 -> prediction_result 에 <b>병합 저장</b>
  *     -> job 을 SUCCEEDED 로
  *     -> WebSocket 으로 PREDICTION_READY push
@@ -57,8 +55,7 @@ import tools.jackson.databind.ObjectMapper;
 public class HormonePredictionService {
 
     private final PredictionClient predictionClient;
-    private final ModelInputBuilder modelInputBuilder;
-    private final WearableDailyRepository wearableDailyRepository;
+    private final ModelProperties modelProperties;
     private final PredictionResultRepository predictionResultRepository;
     private final PredictionJobRepository predictionJobRepository;
     private final SimpMessagingTemplate template;
@@ -83,14 +80,14 @@ public class HormonePredictionService {
                 .build());
 
         try {
-            List<WearableDaily> history = wearableDailyRepository
-                    .findByUserIdAndMeasuredOnBetweenOrderByMeasuredOnDesc(
-                            userId, targetDate.minusYears(2), targetDate);
-            if (history.isEmpty()) {
-                throw new IllegalStateException("예측할 웨어러블 데이터가 없습니다: " + targetDate);
+            if (dayInStudy == null || dayInStudy < 1) {
+                throw new IllegalStateException("예측할 일차가 없습니다: dayInStudy=" + dayInStudy);
             }
 
-            ModelPredictRequest request = modelInputBuilder.build(user, history, targetDate);
+            // ★ 요청은 일차 정수 하나뿐이다. 파이썬이 CSV 를 통째로 갖고 있고
+            //   "몇 일차까지 계산할지"만 알면 된다. dayOffset 은 정렬 보정용(ModelProperties).
+            ModelPredictRequest request = new ModelPredictRequest(
+                    modelProperties.toModelDay(dayInStudy));
             job.setRequestPayload(toMap(request));
 
             ModelPredictResponse response = predictionClient.predict(request);
@@ -127,8 +124,16 @@ public class HormonePredictionService {
      *
      * <p>덮어쓰기가 아니라 병합인 이유: 호르몬마다 모델이 따로 돌면 응답이 쪼개져 온다.
      * 나중 응답이 앞 응답을 지우면 안 된다.
+     *
+     * <p><b>★ 여기에 {@code @Transactional} 을 붙이지 말 것.</b> 같은 클래스 안에서
+     * {@code this.saveResult(...)} 로 부르기 때문에 프록시를 타지 않아 애노테이션이
+     * 아무 일도 하지 않는다 (self-invocation). 있으면 "트랜잭션이 걸려 있다"는
+     * 잘못된 인상만 준다. 실제로 예전 코드에 그렇게 붙어 있었다.
+     *
+     * <p>원자성이 필요하면 별도 빈으로 분리해야 한다. 지금은 하루 1건 upsert 라
+     * 리포지토리 자체 트랜잭션으로 충분하고, 동시 삽입은
+     * {@code uk_pred_user_date} 유니크 제약이 막는다.
      */
-    @Transactional
     protected PredictionResult saveResult(User user, LocalDate targetDate, Integer dayInStudy,
                                           ModelPredictResponse response) {
         PredictionResult incoming = toEntity(user, targetDate, dayInStudy, response);
@@ -153,32 +158,20 @@ public class HormonePredictionService {
                 .modelVersion(r.modelVersion())
                 .rawResponse(toMap(r));
 
-        if (r.hormones() != null) {
-            b.lh(value(r.hormones().lh()))
-                    .estrogen(value(r.hormones().estrogen()))
-                    .pdg(value(r.hormones().pdg()))
-                    .lhConfidence(confidence(r.hormones().lh()))
-                    .estrogenConfidence(confidence(r.hormones().estrogen()))
-                    .pdgConfidence(confidence(r.hormones().pdg()));
-        }
+        b.lh(r.lh()).estrogen(r.estrogen()).pdg(r.pdg());
 
         if (r.phase() != null) {
             // 모르는 라벨이 와도 예외를 던지지 않는다. phase 만 비고 나머지는 저장된다.
-            CyclePhase parsed = CyclePhase.fromLabel(r.phase().label()).orElse(null);
-            if (parsed == null && r.phase().label() != null) {
+            CyclePhase parsed = CyclePhase.fromLabel(r.phase()).orElse(null);
+            if (parsed == null) {
                 log.warn("알 수 없는 phase 라벨 '{}' — phase 를 비우고 나머지만 저장합니다. userId={} date={}",
-                        r.phase().label(), user.getId(), targetDate);
+                        r.phase(), user.getId(), targetDate);
             }
-            b.phase(parsed)
-                    .phaseConfidence(r.phase().confidence())
-                    .phaseProbabilities(r.phase().probabilities());
+            b.phase(parsed);
         }
 
-        if (r.nextPeriod() != null) {
-            b.nextPeriodDate(r.nextPeriod().predictedDate())
-                    .nextPeriodRangeStart(r.nextPeriod().rangeStart())
-                    .nextPeriodRangeEnd(r.nextPeriod().rangeEnd());
-        }
+        // 모델이 확신도를 하나만 준다. 호르몬별 확신도는 계약에 없으므로 비워 둔다.
+        b.phaseConfidence(r.confidence());
 
         if (r.contributions() != null && !r.contributions().isEmpty()) {
             b.contributions(r.contributions().stream()
@@ -187,14 +180,6 @@ public class HormonePredictionService {
         }
 
         return b.build();
-    }
-
-    private BigDecimal value(ModelPredictResponse.HormoneValue v) {
-        return v == null ? null : v.value();
-    }
-
-    private BigDecimal confidence(ModelPredictResponse.HormoneValue v) {
-        return v == null ? null : v.confidence();
     }
 
     /** 콜드스타트 구간에서 "아직 수집 중"임을 프론트에 알린다. */

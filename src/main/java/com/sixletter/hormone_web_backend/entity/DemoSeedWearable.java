@@ -25,7 +25,7 @@ import org.hibernate.type.SqlTypes;
  * 콜드스타트 구간이 거짓말이 된다.
  *
  * <p><b>⚠️ {@link #truth} 를 모델 입력으로 절대 보내지 말 것.</b> 정답 라벨이다.
- * 용도는 두 가지뿐: (1) Mock Predictor 가 그럴듯한 값을 만들 때 참조,
+ * 용도는 하나뿐:
  * (2) 시연 후 "예측값 vs 실측값" 비교.
  */
 @Entity
@@ -54,7 +54,7 @@ public class DemoSeedWearable {
     /**
      * 웨어러블 44개 피처. 키는 모델 피처명이 아니라 <b>DB 컬럼명</b> 기준이다
      * (예: {@code resting_heart_rate}, {@code sleep_resting_heart_rate}).
-     * 모델 피처명으로의 교차 매핑은 ModelInputBuilder 가 담당한다.
+     * 원본 CSV 는 안정시 심박 2개 컬럼의 이름이 엇갈려 있다 — 시드 생성 스크립트가 번역해 넣는다.
      *
      * <p>결측은 {@code null} 로 들어 있다. 0 으로 채우지 말 것.
      */

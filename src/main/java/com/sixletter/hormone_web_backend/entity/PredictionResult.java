@@ -78,15 +78,6 @@ public class PredictionResult {
     @Column(name = "pdg", precision = 8, scale = 3)
     private BigDecimal pdg;
 
-    @Column(name = "lh_confidence", precision = 4, scale = 3)
-    private BigDecimal lhConfidence;
-
-    @Column(name = "estrogen_confidence", precision = 4, scale = 3)
-    private BigDecimal estrogenConfidence;
-
-    @Column(name = "pdg_confidence", precision = 4, scale = 3)
-    private BigDecimal pdgConfidence;
-
     // ---------- 주기 단계 ----------
     /** {@link CyclePhaseConverter} 가 "Fertility" 형태로 변환해 저장한다. */
     @Column(name = "phase", length = 16)
@@ -96,20 +87,10 @@ public class PredictionResult {
     private BigDecimal phaseConfidence;
 
     /** {"Menstrual":0.02, "Follicular":0.11, ...} — 모델이 확률분포를 주면 저장. */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "phase_probabilities")
-    private Map<String, BigDecimal> phaseProbabilities;
 
     // ---------- 다음 월경 예정일 ----------
     // 이 값은 매일 재계산되므로 "흔들린다". 점이 아니라 범위로 다룰 것.
-    @Column(name = "next_period_date")
-    private LocalDate nextPeriodDate;
 
-    @Column(name = "next_period_range_start")
-    private LocalDate nextPeriodRangeStart;
-
-    @Column(name = "next_period_range_end")
-    private LocalDate nextPeriodRangeEnd;
 
     // ---------- 부가 정보 ----------
     @JdbcTypeCode(SqlTypes.JSON)
@@ -153,17 +134,10 @@ public class PredictionResult {
         if (other.lh != null) this.lh = other.lh;
         if (other.estrogen != null) this.estrogen = other.estrogen;
         if (other.pdg != null) this.pdg = other.pdg;
-        if (other.lhConfidence != null) this.lhConfidence = other.lhConfidence;
-        if (other.estrogenConfidence != null) this.estrogenConfidence = other.estrogenConfidence;
-        if (other.pdgConfidence != null) this.pdgConfidence = other.pdgConfidence;
 
         if (other.phase != null) this.phase = other.phase;
+        // 모델이 확신도를 하나만 준다. 호르몬별 확신도 컬럼은 아무도 안 채워서 지웠다.
         if (other.phaseConfidence != null) this.phaseConfidence = other.phaseConfidence;
-        if (other.phaseProbabilities != null) this.phaseProbabilities = other.phaseProbabilities;
-
-        if (other.nextPeriodDate != null) this.nextPeriodDate = other.nextPeriodDate;
-        if (other.nextPeriodRangeStart != null) this.nextPeriodRangeStart = other.nextPeriodRangeStart;
-        if (other.nextPeriodRangeEnd != null) this.nextPeriodRangeEnd = other.nextPeriodRangeEnd;
 
         if (other.contributions != null && !other.contributions.isEmpty()) {
             this.contributions = other.contributions;

@@ -67,14 +67,14 @@ app:
     prediction-topic-prefix: /topic/prediction/
 
   model:
-    # 파이썬 예측 서버. TODO: 모델팀에서 실제 주소 받으면 MODEL_BASE_URL 로 주입
+    # 파이썬 예측 서버. ⚠️ 내장 Mock 을 제거했으므로 이 주소가 살아 있어야 예측이 나온다.
     base-url: ${MODEL_BASE_URL:http://127.0.0.1:5000}
     predict-path: ${MODEL_PREDICT_PATH:/predict}
-    # false 면 MockPredictionClient 사용 (파이썬 없이 E2E 동작) — B-08
-    enabled: ${MODEL_ENABLED:false}
-    # SINGLE_DAY | FULL_HISTORY | WINDOW  — 모델팀 확정 전 기본값은 누적 전체
-    input-mode: ${MODEL_INPUT_MODE:FULL_HISTORY}
-    window-size: 20
+    # ★ 일차 정렬 보정. 파이썬에 보낼 일차 = 백엔드 Day + 이 값.
+    #   백엔드 Day 1 = day_in_study 862 인데 id=22 의 2024 구간은 852 부터 시작한다.
+    #   파이썬이 구간 처음부터 세면 10, 우리와 같은 90일 창을 쓰면 0.
+    #   확인 문장: "45를 보내면 day_in_study 몇 번까지 쓰나요?" (906->0 / 896->10)
+    day-offset: ${MODEL_DAY_OFFSET:0}
     connect-timeout-ms: 3000
     read-timeout-ms: 30000
     # TODO: 인증 방식 모델팀 확인. 비어 있으면 헤더를 붙이지 않는다.
@@ -90,9 +90,21 @@ app:
 # ============================================================================
 # Claude API — L-07(의학 어드바이스) 용. 현재 코드에서 사용처 없음.
 # ============================================================================
+# ============================================================================
+# Claude API — "오늘의 조언" 기능.
+# api-key 가 비어 있으면 기능 자체가 꺼진다 (호출하지 않고 화면에 안내만 뜬다).
+# ============================================================================
 anthropic:
   api-key: ${ANTHROPIC_API_KEY:}
-  model: ${ANTHROPIC_MODEL:claude-opus-5}
+  # Sonnet 을 쓴다. Opus 대비 비용이 1/5 이고(90일 완주 $17 -> $3.4) 응답도 빠르다.
+  # 조언 품질은 실측 비교에서 차이가 크지 않았다.
+  model: ${ANTHROPIC_MODEL:claude-sonnet-5}
+  base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
+  # 조언에 실어 보낼 웨어러블 일수. 일차가 늘어도 이 값으로 고정돼 비용이 일정하다.
+  # 30일 ≈ 호출당 9천~1만 토큰.
+  history-days: ${ADVICE_HISTORY_DAYS:30}
+  max-tokens: ${ADVICE_MAX_TOKENS:2000}
+  read-timeout-ms: 60000
 
 logging:
   level:

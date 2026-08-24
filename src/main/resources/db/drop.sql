@@ -8,6 +8,7 @@
 -- 외래키 때문에 삭제 순서가 중요하다 — 자식 테이블부터 지운다.
 -- ===========================================================================
 
+DROP TABLE IF EXISTS daily_advice;
 DROP TABLE IF EXISTS demo_seed_wearable;
 DROP TABLE IF EXISTS demo_session;
 DROP TABLE IF EXISTS prediction_job;

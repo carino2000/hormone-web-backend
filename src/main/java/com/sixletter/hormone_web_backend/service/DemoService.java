@@ -12,6 +12,7 @@ import com.sixletter.hormone_web_backend.entity.PredictionResult;
 import com.sixletter.hormone_web_backend.entity.User;
 import com.sixletter.hormone_web_backend.entity.WearableDaily;
 import com.sixletter.hormone_web_backend.exception.NotFoundException;
+import com.sixletter.hormone_web_backend.repository.DailyAdviceRepository;
 import com.sixletter.hormone_web_backend.repository.DemoSeedWearableRepository;
 import com.sixletter.hormone_web_backend.repository.DemoSessionRepository;
 import com.sixletter.hormone_web_backend.repository.PredictionJobRepository;
@@ -61,6 +62,7 @@ public class DemoService {
     private final WearableDailyRepository wearableDailyRepository;
     private final PredictionResultRepository predictionResultRepository;
     private final PredictionJobRepository predictionJobRepository;
+    private final DailyAdviceRepository dailyAdviceRepository;
     private final UserRepository userRepository;
     private final HormonePredictionService predictionService;
 
@@ -273,6 +275,9 @@ public class DemoService {
 
         predictionResultRepository.deleteByUserId(userId);
         predictionJobRepository.deleteByUserId(userId);
+        // 조언도 같이 지운다. 안 지우면 초기화 후에도 옛 조언이 남아서
+        // "Day 0 인데 어제 조언이 보이는" 상태가 된다.
+        dailyAdviceRepository.deleteByUserId(userId);
         wearableDailyRepository.deleteAll(wearableDailyRepository.findByUserIdOrderByMeasuredOnDesc(userId));
 
         session.setCurrentDay(0);

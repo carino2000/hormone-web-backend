@@ -1,41 +1,30 @@
 package com.sixletter.hormone_web_backend.dto.model;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-
 /**
- * 백엔드 → 파이썬 예측 서버 요청. <b>계약 미확정 상태의 제안안이다.</b>
- * 모델팀 답변이 오면 이 파일만 고치면 된다 (TODO_ROADMAP.md 부록 B).
+ * 백엔드 → 파이썬 예측 서버 요청.
  *
- * @param userId      사용자 식별자
- * @param targetDate  예측 대상 날짜 (history 의 마지막 원소와 같아야 함)
- * @param staticInfo  정적 피처 3개. 엑셀 주황색 = 이미 DB 에 있는 값
- * @param history     오름차순. input-mode 가 SINGLE_DAY 면 길이 1
+ * <pre>
+ *   POST /predict   {"day": 45}
+ * </pre>
+ *
+ * <p><b>이게 전부다.</b> 예전에는 웨어러블 47개 피처 × 최대 90일 히스토리를 실어 보냈지만
+ * (한 건이 수백 KB였다), 계약이 바뀌어 <b>일차 정수 하나만</b> 보낸다.
+ * 파이썬 쪽이 원본 CSV를 통째로 갖고 있고, "몇 일차까지 계산할지"만 알면 되기 때문이다.
+ *
+ * <p><b>대상 데이터는 고정이다:</b> mcPHASES {@code id=22} / {@code study_interval=2024}.
+ * 파이썬이 같은 참가자·같은 구간을 보고 있어야 한다. 다른 참가자를 쓰기로 하면
+ * 이 요청에 참가자 식별자를 추가해야 한다.
+ *
+ * <p><b>★ 일차 정렬이 서로 같아야 한다.</b> 백엔드 Day 1 이 파이썬 day 1 과 같은 날을
+ * 가리켜야 한다. 지금 시드는 {@code day_in_study 862~951} 인데 이 참가자의 2024 구간은
+ * {@code 852} 부터 시작한다 — 즉 <b>백엔드 Day 1 은 구간의 11번째 행</b>이다.
+ * 파이썬이 구간 처음부터 센다면 10일이 어긋난다.
+ * 보정은 {@code app.model.day-offset} 하나로 흡수한다 ({@code ModelProperties} 참고).
+ *
+ * <p>POST 인 이유: GET 은 프록시·브라우저가 캐싱할 수 있어서 모델을 고친 뒤에도 옛 응답이
+ * 올 수 있다. 게다가 이 호출은 백엔드 쪽 DB 쓰기를 유발하므로 부작용 없는 요청이 아니다.
+ *
+ * @param day 예측 대상 일차 (1-base). 파이썬은 이 일차까지의 데이터로 계산한다
  */
-public record ModelPredictRequest(
-        Long userId,
-        LocalDate targetDate,
-        StaticInfo staticInfo,
-        List<DayFeatures> history
-) {
-
-    /**
-     * 정적 피처. <b>현재 백엔드가 이 3개를 안 보내고 있었다</b> — 엑셀 기준으로는
-     * 모델 입력에 포함돼야 한다.
-     *
-     * @param ethnicity 실데이터 8종 (White / East Asian / Southeast Asian / ...).
-     *                  TODO: 문자열 그대로인지 인코딩이 필요한지 모델팀 확인 (Q9)
-     */
-    public record StaticInfo(Integer birthYear, Integer ageOfFirstMenarche, String ethnicity) {
-    }
-
-    /**
-     * 하루치 피처.
-     *
-     * @param features <b>모델 피처명</b> 기준 44개 (DB 컬럼명 아님).
-     *                 결측은 null. 키는 항상 44개 다 존재한다
-     */
-    public record DayFeatures(LocalDate date, Map<String, Object> features) {
-    }
+public record ModelPredictRequest(Integer day) {
 }

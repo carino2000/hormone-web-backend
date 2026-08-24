@@ -158,7 +158,7 @@ public class DemoSeedLoader implements ApplicationRunner {
 
         /**
          * @param wearable DB 컬럼명 기준 44개. 결측은 null
-         * @param truth    실측 정답 라벨. Mock Predictor 참조용 — 모델 입력 금지
+         * @param truth    실측 정답 라벨. 채점용 — 모델 입력 금지
          */
         record SeedDay(int dayIndex, String date,
                        Map<String, Object> wearable, Map<String, Object> truth) {

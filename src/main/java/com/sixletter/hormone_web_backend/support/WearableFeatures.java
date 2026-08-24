@@ -16,7 +16,6 @@ import java.util.function.Function;
  *
  * <p>이 클래스가 44개 피처 목록의 단일 진실이다. 세 군데가 이걸 공유한다:
  * <ul>
- *   <li>{@code ModelInputBuilder} — 모델 피처명으로 한 번 더 번역해서 파이썬에 보냄</li>
  *   <li>데모 시드 적재 — {@code demo_seed_wearable.payload} → {@code wearable_daily}</li>
  *   <li>타임라인 응답 — 프론트에 그날의 생체신호를 내려줌</li>
  * </ul>
@@ -25,9 +24,13 @@ import java.util.function.Function;
  * 학습 데이터에서 결측률이 최대 69% 라 결측이 예외가 아니라 기본 상태다.
  * 키 자체는 항상 44개가 다 존재하고, 값만 null 이 된다.
  *
- * <p><b>★ 안정시 심박 2개 컬럼은 여기서 이름을 바꾸지 않는다.</b> 여기는 DB 컬럼명 세계다.
- * 모델 피처명으로의 교차 매핑({@code resting_heart_rate}→{@code value} 등)은
- * {@code ModelInputBuilder} 가 담당한다.
+ * <p><b>★ 안정시 심박 2개 컬럼의 이름을 "고치지" 말 것.</b> 여기는 DB 컬럼명 세계다.
+ * 원본 CSV 에서 {@code resting_heart_rate.csv} 의 값 컬럼명이 {@code value} 이고
+ * {@code sleep_score.csv} 의 컬럼명이 {@code resting_heart_rate} 라 이름이 엇갈려 있다.
+ * 시드 생성 스크립트가 그걸 DB 컬럼명으로 번역해서 넣는다.
+ *
+ * <p>(예전에는 백엔드가 모델 피처명으로 한 번 더 번역해서 파이썬에 보냈지만,
+ * 지금은 요청이 일차 정수 하나라 그 번역 단계가 사라졌다.)
  */
 @lombok.extern.slf4j.Slf4j
 public final class WearableFeatures {
@@ -88,7 +91,7 @@ public final class WearableFeatures {
             new Field("bpm", WearableDaily::getBpm, (e, v) -> e.setBpm(toDec(v))),
             new Field("bpm_min", WearableDaily::getBpmMin, (e, v) -> e.setBpmMin(toInt(v))),
             new Field("bpm_max", WearableDaily::getBpmMax, (e, v) -> e.setBpmMax(toInt(v))),
-            // 안정시 심박 — DB 컬럼명 그대로. 모델 피처명 변환은 ModelInputBuilder 가 한다
+            // 안정시 심박 — DB 컬럼명 그대로. 원본 CSV 는 이름이 엇갈려 있다(클래스 주석 참고)
             new Field("resting_heart_rate", WearableDaily::getRestingHeartRate, (e, v) -> e.setRestingHeartRate(toDec(v))),
             new Field("sleep_resting_heart_rate", WearableDaily::getSleepRestingHeartRate, (e, v) -> e.setSleepRestingHeartRate(toInt(v))),
             // HRV

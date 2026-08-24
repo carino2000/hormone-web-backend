@@ -38,7 +38,7 @@ public record DemoTimelineDto(
      * 실측 호르몬 값. mcPHASES 원본의 정답 라벨이다.
      *
      * <p><b>이건 모델 입력이 아니라 채점표다.</b> 절대 예측 요청에 실어 보내지 말 것.
-     * 용도는 두 가지뿐 — 화면에서 예측과 대조, 그리고 Mock Predictor 가 그럴듯한 값을 만들 때 참조.
+     * 용도는 하나뿐 — 화면에서 예측과 대조(채점). 모델 입력으로는 절대 보내지 않는다.
      */
     public record Truth(String phase, BigDecimal lh, BigDecimal estrogen, BigDecimal pdg) {
     }

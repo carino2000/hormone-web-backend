@@ -24,33 +24,14 @@ public record PredictionDto(
         BigDecimal lh,
         BigDecimal estrogen,
         BigDecimal pdg,
-        HormoneConfidence hormoneConfidence,
-        NextPeriod nextPeriod,
         List<Contribution> contributions,
         String modelVersion
 ) {
-
-    /** 호르몬별 신뢰도. pdg 는 학습 데이터 결측 64.7% 라 대개 낮게 나온다. */
-    public record HormoneConfidence(BigDecimal lh, BigDecimal estrogen, BigDecimal pdg) {
-    }
-
-    /**
-     * 다음 월경 예정일. <b>점이 아니라 범위로 다룬다</b> —
-     * 누적 데이터로 매일 재계산되므로 반드시 흔들린다.
-     */
-    public record NextPeriod(LocalDate date, LocalDate rangeStart, LocalDate rangeEnd) {
-    }
 
     public static PredictionDto from(PredictionResult r) {
         if (r == null) {
             return null;
         }
-        NextPeriod np = (r.getNextPeriodDate() == null
-                && r.getNextPeriodRangeStart() == null
-                && r.getNextPeriodRangeEnd() == null)
-                ? null
-                : new NextPeriod(r.getNextPeriodDate(), r.getNextPeriodRangeStart(), r.getNextPeriodRangeEnd());
-
         return new PredictionDto(
                 r.getTargetDate(),
                 r.getDayInStudy(),
@@ -58,8 +39,6 @@ public record PredictionDto(
                 r.getPhase() == null ? null : r.getPhase().getLabelKo(),
                 r.getPhaseConfidence(),
                 r.getLh(), r.getEstrogen(), r.getPdg(),
-                new HormoneConfidence(r.getLhConfidence(), r.getEstrogenConfidence(), r.getPdgConfidence()),
-                np,
                 r.getContributions(),
                 r.getModelVersion());
     }
