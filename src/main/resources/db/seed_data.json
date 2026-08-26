@@ -1,11 +1,11 @@
 {
-  "_comment": "scripts/extract_seed.py 로 생성됨. 직접 수정하지 말 것.",
+  "_comment": "scripts/extract_seed.py 로 생성 후, 모델 day_index=1(day_in_study 869)에 맞춰 앞 7일을 잘라내고 재번호를 매겼다. 이제 웹 Day N = 모델 day_index N 이다 (app.model.day-offset = 0). 직접 수정하지 말 것.",
   "source": {
     "dataset": "mcPHASES merged_nan",
     "participantId": "22",
     "studyInterval": "2024",
     "dayInStudyRange": [
-      862,
+      869,
       951
     ]
   },
@@ -17,403 +17,11 @@
     "ethnicity": "Southeast Asian"
   },
   "startDate": "2026-08-13",
-  "totalDays": 90,
-  "coldStartDays": 20,
+  "totalDays": 83,
+  "coldStartDays": 15,
   "days": [
     {
       "dayIndex": 1,
-      "date": "2026-08-13",
-      "wearable": {
-        "sedentary": null,
-        "lightly": null,
-        "moderately": null,
-        "very": null,
-        "FAT_BURN": 4,
-        "CARDIO": 0,
-        "PEAK": 0,
-        "altitude": 350,
-        "calories": 1704,
-        "temperature_samples": 473,
-        "nightly_temperature": 34.20685,
-        "filtered_demographic_vo2_max": 25.66414,
-        "spo2_variation_std": 16.97,
-        "originalduration": 1127000,
-        "averageheartrate": 115,
-        "exercise_calories": 25,
-        "steps": 1692,
-        "glucose_mean": null,
-        "glucose_std": null,
-        "bpm": 85.05,
-        "bpm_min": 57,
-        "bpm_max": 147,
-        "rmssd": 41.901,
-        "low_frequency": 891.943,
-        "high_frequency": 488.075,
-        "full_sleep_breathing_rate": 16.1,
-        "deep_sleep_breathing_rate": 16.1,
-        "light_sleep_breathing_rate": 14.8,
-        "rem_sleep_breathing_rate": 15.5,
-        "resting_heart_rate": 72.3,
-        "minutesasleep": 428.5,
-        "efficiency": 96,
-        "minutesawake": 52,
-        "nap_minutes_total": 0,
-        "overall_score": 84,
-        "deep_sleep_in_minutes": 110,
-        "sleep_resting_heart_rate": 75,
-        "restlessness": 0.09438,
-        "stress_score": 72,
-        "in_default_zone_3": 0,
-        "in_default_zone_2": 3,
-        "in_default_zone_1": 204,
-        "below_default_zone_1": 1226,
-        "temperature_diff_from_baseline": -1.965
-      },
-      "truth": {
-        "phase": "Luteal",
-        "lh": 2.8,
-        "estrogen": 62.5,
-        "pdg": 8
-      }
-    },
-    {
-      "dayIndex": 2,
-      "date": "2026-08-14",
-      "wearable": {
-        "sedentary": null,
-        "lightly": null,
-        "moderately": null,
-        "very": null,
-        "FAT_BURN": 29,
-        "CARDIO": 0,
-        "PEAK": 0,
-        "altitude": 360,
-        "calories": 2782,
-        "temperature_samples": 394,
-        "nightly_temperature": 34.298744,
-        "filtered_demographic_vo2_max": 25.70542,
-        "spo2_variation_std": 15.11,
-        "originalduration": 1792000,
-        "averageheartrate": 127,
-        "exercise_calories": 42,
-        "steps": 2710,
-        "glucose_mean": null,
-        "glucose_std": null,
-        "bpm": 84.71,
-        "bpm_min": 61,
-        "bpm_max": 143,
-        "rmssd": 37.831,
-        "low_frequency": 811.489,
-        "high_frequency": 372.298,
-        "full_sleep_breathing_rate": 16,
-        "deep_sleep_breathing_rate": 16,
-        "light_sleep_breathing_rate": 15.1,
-        "rem_sleep_breathing_rate": 15.4,
-        "resting_heart_rate": 75.86,
-        "minutesasleep": 378,
-        "efficiency": 91.8,
-        "minutesawake": 59.8,
-        "nap_minutes_total": 0,
-        "overall_score": 79,
-        "deep_sleep_in_minutes": 77,
-        "sleep_resting_heart_rate": 76,
-        "restlessness": 0.08976,
-        "stress_score": 79,
-        "in_default_zone_3": 0,
-        "in_default_zone_2": 6,
-        "in_default_zone_1": 301,
-        "below_default_zone_1": 1119,
-        "temperature_diff_from_baseline": -2.365
-      },
-      "truth": {
-        "phase": "Luteal",
-        "lh": 2.5,
-        "estrogen": 115.8,
-        "pdg": 30
-      }
-    },
-    {
-      "dayIndex": 3,
-      "date": "2026-08-15",
-      "wearable": {
-        "sedentary": null,
-        "lightly": 115,
-        "moderately": 11,
-        "very": 12,
-        "FAT_BURN": 26,
-        "CARDIO": 0,
-        "PEAK": 0,
-        "altitude": 510,
-        "calories": 2098,
-        "temperature_samples": 433,
-        "nightly_temperature": 34.44194,
-        "filtered_demographic_vo2_max": 25.80663,
-        "spo2_variation_std": 15.33,
-        "originalduration": 5334000,
-        "averageheartrate": 110,
-        "exercise_calories": 30,
-        "steps": 2114,
-        "glucose_mean": null,
-        "glucose_std": null,
-        "bpm": 91.32,
-        "bpm_min": 58,
-        "bpm_max": 134,
-        "rmssd": 41.032,
-        "low_frequency": 925.691,
-        "high_frequency": 460.252,
-        "full_sleep_breathing_rate": 14.7,
-        "deep_sleep_breathing_rate": 14.7,
-        "light_sleep_breathing_rate": 14.5,
-        "rem_sleep_breathing_rate": 13.5,
-        "resting_heart_rate": 82.73,
-        "minutesasleep": 462.2,
-        "efficiency": 93.8,
-        "minutesawake": 55.2,
-        "nap_minutes_total": 0,
-        "overall_score": 82,
-        "deep_sleep_in_minutes": 94,
-        "sleep_resting_heart_rate": 75,
-        "restlessness": 0.083238,
-        "stress_score": 85,
-        "in_default_zone_3": 0,
-        "in_default_zone_2": 1,
-        "in_default_zone_1": 589,
-        "below_default_zone_1": 801,
-        "temperature_diff_from_baseline": -1.615
-      },
-      "truth": {
-        "phase": "Luteal",
-        "lh": 2.8,
-        "estrogen": 162.4,
-        "pdg": 30
-      }
-    },
-    {
-      "dayIndex": 4,
-      "date": "2026-08-16",
-      "wearable": {
-        "sedentary": null,
-        "lightly": null,
-        "moderately": null,
-        "very": null,
-        "FAT_BURN": null,
-        "CARDIO": null,
-        "PEAK": null,
-        "altitude": 250,
-        "calories": 1526,
-        "temperature_samples": 512,
-        "nightly_temperature": 33.345635,
-        "filtered_demographic_vo2_max": 25.86081,
-        "spo2_variation_std": 15.87,
-        "originalduration": null,
-        "averageheartrate": null,
-        "exercise_calories": null,
-        "steps": null,
-        "glucose_mean": null,
-        "glucose_std": null,
-        "bpm": 85.62,
-        "bpm_min": 61,
-        "bpm_max": 131,
-        "rmssd": 35.588,
-        "low_frequency": 648.969,
-        "high_frequency": 365.321,
-        "full_sleep_breathing_rate": 15.8,
-        "deep_sleep_breathing_rate": 15.8,
-        "light_sleep_breathing_rate": 14.9,
-        "rem_sleep_breathing_rate": 15.4,
-        "resting_heart_rate": 70.15,
-        "minutesasleep": 458.5,
-        "efficiency": 92.2,
-        "minutesawake": 89,
-        "nap_minutes_total": 212,
-        "overall_score": 82,
-        "deep_sleep_in_minutes": 118,
-        "sleep_resting_heart_rate": 75,
-        "restlessness": 0.103783,
-        "stress_score": 77,
-        "in_default_zone_3": 0,
-        "in_default_zone_2": 0,
-        "in_default_zone_1": 166,
-        "below_default_zone_1": 1227,
-        "temperature_diff_from_baseline": -1.934
-      },
-      "truth": {
-        "phase": "Luteal",
-        "lh": 1,
-        "estrogen": 62.7,
-        "pdg": 5.6
-      }
-    },
-    {
-      "dayIndex": 5,
-      "date": "2026-08-17",
-      "wearable": {
-        "sedentary": null,
-        "lightly": 153,
-        "moderately": 0,
-        "very": 0,
-        "FAT_BURN": 21,
-        "CARDIO": 4,
-        "PEAK": 0,
-        "altitude": 200,
-        "calories": 1678,
-        "temperature_samples": 486,
-        "nightly_temperature": 33.797891,
-        "filtered_demographic_vo2_max": 25.86602,
-        "spo2_variation_std": 15.85,
-        "originalduration": null,
-        "averageheartrate": null,
-        "exercise_calories": null,
-        "steps": null,
-        "glucose_mean": null,
-        "glucose_std": null,
-        "bpm": 79.08,
-        "bpm_min": 54,
-        "bpm_max": 148,
-        "rmssd": 77.129,
-        "low_frequency": 2053.166,
-        "high_frequency": 1391.646,
-        "full_sleep_breathing_rate": 15.3,
-        "deep_sleep_breathing_rate": 15.3,
-        "light_sleep_breathing_rate": 14.9,
-        "rem_sleep_breathing_rate": 15.2,
-        "resting_heart_rate": 63.27,
-        "minutesasleep": 417.4,
-        "efficiency": 95,
-        "minutesawake": 41.4,
-        "nap_minutes_total": 241,
-        "overall_score": 85,
-        "deep_sleep_in_minutes": 78,
-        "sleep_resting_heart_rate": 76,
-        "restlessness": 0.097409,
-        "stress_score": 79,
-        "in_default_zone_3": 0,
-        "in_default_zone_2": 8,
-        "in_default_zone_1": 230,
-        "below_default_zone_1": 1125,
-        "temperature_diff_from_baseline": -1.98
-      },
-      "truth": {
-        "phase": "Luteal",
-        "lh": 3,
-        "estrogen": 112.6,
-        "pdg": 23.5
-      }
-    },
-    {
-      "dayIndex": 6,
-      "date": "2026-08-18",
-      "wearable": {
-        "sedentary": null,
-        "lightly": 132,
-        "moderately": 14,
-        "very": 32,
-        "FAT_BURN": 5,
-        "CARDIO": 0,
-        "PEAK": 0,
-        "altitude": 280,
-        "calories": 1912,
-        "temperature_samples": 480,
-        "nightly_temperature": 33.026917,
-        "filtered_demographic_vo2_max": 25.83182,
-        "spo2_variation_std": 16.3,
-        "originalduration": null,
-        "averageheartrate": null,
-        "exercise_calories": null,
-        "steps": null,
-        "glucose_mean": null,
-        "glucose_std": null,
-        "bpm": 83.84,
-        "bpm_min": 58,
-        "bpm_max": 149,
-        "rmssd": 45.79,
-        "low_frequency": 1025.331,
-        "high_frequency": 768.397,
-        "full_sleep_breathing_rate": 14.6,
-        "deep_sleep_breathing_rate": 14.6,
-        "light_sleep_breathing_rate": 13.7,
-        "rem_sleep_breathing_rate": 14.7,
-        "resting_heart_rate": 62.87,
-        "minutesasleep": 441.8,
-        "efficiency": 93.6,
-        "minutesawake": 65.6,
-        "nap_minutes_total": 0,
-        "overall_score": 83,
-        "deep_sleep_in_minutes": 99,
-        "sleep_resting_heart_rate": 74,
-        "restlessness": 0.096774,
-        "stress_score": 80,
-        "in_default_zone_3": 0,
-        "in_default_zone_2": 0,
-        "in_default_zone_1": 56,
-        "below_default_zone_1": 1329,
-        "temperature_diff_from_baseline": -2.08
-      },
-      "truth": {
-        "phase": "Luteal",
-        "lh": 2.2,
-        "estrogen": 69.5,
-        "pdg": 5.6
-      }
-    },
-    {
-      "dayIndex": 7,
-      "date": "2026-08-19",
-      "wearable": {
-        "sedentary": null,
-        "lightly": 229,
-        "moderately": 20,
-        "very": 28,
-        "FAT_BURN": null,
-        "CARDIO": null,
-        "PEAK": null,
-        "altitude": 430,
-        "calories": 1583,
-        "temperature_samples": 459,
-        "nightly_temperature": 33.166786,
-        "filtered_demographic_vo2_max": 25.74486,
-        "spo2_variation_std": 17.36,
-        "originalduration": null,
-        "averageheartrate": null,
-        "exercise_calories": null,
-        "steps": null,
-        "glucose_mean": null,
-        "glucose_std": null,
-        "bpm": 76.06,
-        "bpm_min": 50,
-        "bpm_max": 125,
-        "rmssd": 77.751,
-        "low_frequency": 1980.503,
-        "high_frequency": 1600.853,
-        "full_sleep_breathing_rate": 14.8,
-        "deep_sleep_breathing_rate": 14.8,
-        "light_sleep_breathing_rate": 14.1,
-        "rem_sleep_breathing_rate": 13.5,
-        "resting_heart_rate": 61.98,
-        "minutesasleep": 420.8,
-        "efficiency": 93.4,
-        "minutesawake": 58.2,
-        "nap_minutes_total": 60,
-        "overall_score": 83,
-        "deep_sleep_in_minutes": 83,
-        "sleep_resting_heart_rate": 75,
-        "restlessness": 0.095843,
-        "stress_score": 79,
-        "in_default_zone_3": 0,
-        "in_default_zone_2": 0,
-        "in_default_zone_1": 74,
-        "below_default_zone_1": 1360,
-        "temperature_diff_from_baseline": -1.875
-      },
-      "truth": {
-        "phase": "Luteal",
-        "lh": 3.8,
-        "estrogen": 91,
-        "pdg": 7.7
-      }
-    },
-    {
-      "dayIndex": 8,
       "date": "2026-08-20",
       "wearable": {
         "sedentary": null,
@@ -469,7 +77,7 @@
       }
     },
     {
-      "dayIndex": 9,
+      "dayIndex": 2,
       "date": "2026-08-21",
       "wearable": {
         "sedentary": null,
@@ -525,7 +133,7 @@
       }
     },
     {
-      "dayIndex": 10,
+      "dayIndex": 3,
       "date": "2026-08-22",
       "wearable": {
         "sedentary": null,
@@ -581,7 +189,7 @@
       }
     },
     {
-      "dayIndex": 11,
+      "dayIndex": 4,
       "date": "2026-08-23",
       "wearable": {
         "sedentary": null,
@@ -637,7 +245,7 @@
       }
     },
     {
-      "dayIndex": 12,
+      "dayIndex": 5,
       "date": "2026-08-24",
       "wearable": {
         "sedentary": null,
@@ -693,7 +301,7 @@
       }
     },
     {
-      "dayIndex": 13,
+      "dayIndex": 6,
       "date": "2026-08-25",
       "wearable": {
         "sedentary": null,
@@ -749,7 +357,7 @@
       }
     },
     {
-      "dayIndex": 14,
+      "dayIndex": 7,
       "date": "2026-08-26",
       "wearable": {
         "sedentary": null,
@@ -805,7 +413,7 @@
       }
     },
     {
-      "dayIndex": 15,
+      "dayIndex": 8,
       "date": "2026-08-27",
       "wearable": {
         "sedentary": null,
@@ -861,7 +469,7 @@
       }
     },
     {
-      "dayIndex": 16,
+      "dayIndex": 9,
       "date": "2026-08-28",
       "wearable": {
         "sedentary": null,
@@ -917,7 +525,7 @@
       }
     },
     {
-      "dayIndex": 17,
+      "dayIndex": 10,
       "date": "2026-08-29",
       "wearable": {
         "sedentary": null,
@@ -973,7 +581,7 @@
       }
     },
     {
-      "dayIndex": 18,
+      "dayIndex": 11,
       "date": "2026-08-30",
       "wearable": {
         "sedentary": null,
@@ -1029,7 +637,7 @@
       }
     },
     {
-      "dayIndex": 19,
+      "dayIndex": 12,
       "date": "2026-08-31",
       "wearable": {
         "sedentary": null,
@@ -1085,7 +693,7 @@
       }
     },
     {
-      "dayIndex": 20,
+      "dayIndex": 13,
       "date": "2026-09-01",
       "wearable": {
         "sedentary": null,
@@ -1141,7 +749,7 @@
       }
     },
     {
-      "dayIndex": 21,
+      "dayIndex": 14,
       "date": "2026-09-02",
       "wearable": {
         "sedentary": null,
@@ -1197,7 +805,7 @@
       }
     },
     {
-      "dayIndex": 22,
+      "dayIndex": 15,
       "date": "2026-09-03",
       "wearable": {
         "sedentary": null,
@@ -1253,7 +861,7 @@
       }
     },
     {
-      "dayIndex": 23,
+      "dayIndex": 16,
       "date": "2026-09-04",
       "wearable": {
         "sedentary": null,
@@ -1309,7 +917,7 @@
       }
     },
     {
-      "dayIndex": 24,
+      "dayIndex": 17,
       "date": "2026-09-05",
       "wearable": {
         "sedentary": null,
@@ -1365,7 +973,7 @@
       }
     },
     {
-      "dayIndex": 25,
+      "dayIndex": 18,
       "date": "2026-09-06",
       "wearable": {
         "sedentary": null,
@@ -1421,7 +1029,7 @@
       }
     },
     {
-      "dayIndex": 26,
+      "dayIndex": 19,
       "date": "2026-09-07",
       "wearable": {
         "sedentary": null,
@@ -1477,7 +1085,7 @@
       }
     },
     {
-      "dayIndex": 27,
+      "dayIndex": 20,
       "date": "2026-09-08",
       "wearable": {
         "sedentary": null,
@@ -1533,7 +1141,7 @@
       }
     },
     {
-      "dayIndex": 28,
+      "dayIndex": 21,
       "date": "2026-09-09",
       "wearable": {
         "sedentary": null,
@@ -1589,7 +1197,7 @@
       }
     },
     {
-      "dayIndex": 29,
+      "dayIndex": 22,
       "date": "2026-09-10",
       "wearable": {
         "sedentary": null,
@@ -1645,7 +1253,7 @@
       }
     },
     {
-      "dayIndex": 30,
+      "dayIndex": 23,
       "date": "2026-09-11",
       "wearable": {
         "sedentary": null,
@@ -1701,7 +1309,7 @@
       }
     },
     {
-      "dayIndex": 31,
+      "dayIndex": 24,
       "date": "2026-09-12",
       "wearable": {
         "sedentary": null,
@@ -1757,7 +1365,7 @@
       }
     },
     {
-      "dayIndex": 32,
+      "dayIndex": 25,
       "date": "2026-09-13",
       "wearable": {
         "sedentary": null,
@@ -1813,7 +1421,7 @@
       }
     },
     {
-      "dayIndex": 33,
+      "dayIndex": 26,
       "date": "2026-09-14",
       "wearable": {
         "sedentary": null,
@@ -1869,7 +1477,7 @@
       }
     },
     {
-      "dayIndex": 34,
+      "dayIndex": 27,
       "date": "2026-09-15",
       "wearable": {
         "sedentary": null,
@@ -1925,7 +1533,7 @@
       }
     },
     {
-      "dayIndex": 35,
+      "dayIndex": 28,
       "date": "2026-09-16",
       "wearable": {
         "sedentary": null,
@@ -1981,7 +1589,7 @@
       }
     },
     {
-      "dayIndex": 36,
+      "dayIndex": 29,
       "date": "2026-09-17",
       "wearable": {
         "sedentary": null,
@@ -2037,7 +1645,7 @@
       }
     },
     {
-      "dayIndex": 37,
+      "dayIndex": 30,
       "date": "2026-09-18",
       "wearable": {
         "sedentary": null,
@@ -2093,7 +1701,7 @@
       }
     },
     {
-      "dayIndex": 38,
+      "dayIndex": 31,
       "date": "2026-09-19",
       "wearable": {
         "sedentary": null,
@@ -2149,7 +1757,7 @@
       }
     },
     {
-      "dayIndex": 39,
+      "dayIndex": 32,
       "date": "2026-09-20",
       "wearable": {
         "sedentary": null,
@@ -2205,7 +1813,7 @@
       }
     },
     {
-      "dayIndex": 40,
+      "dayIndex": 33,
       "date": "2026-09-21",
       "wearable": {
         "sedentary": null,
@@ -2261,7 +1869,7 @@
       }
     },
     {
-      "dayIndex": 41,
+      "dayIndex": 34,
       "date": "2026-09-22",
       "wearable": {
         "sedentary": null,
@@ -2317,7 +1925,7 @@
       }
     },
     {
-      "dayIndex": 42,
+      "dayIndex": 35,
       "date": "2026-09-23",
       "wearable": {
         "sedentary": null,
@@ -2373,7 +1981,7 @@
       }
     },
     {
-      "dayIndex": 43,
+      "dayIndex": 36,
       "date": "2026-09-24",
       "wearable": {
         "sedentary": null,
@@ -2429,7 +2037,7 @@
       }
     },
     {
-      "dayIndex": 44,
+      "dayIndex": 37,
       "date": "2026-09-25",
       "wearable": {
         "sedentary": null,
@@ -2485,7 +2093,7 @@
       }
     },
     {
-      "dayIndex": 45,
+      "dayIndex": 38,
       "date": "2026-09-26",
       "wearable": {
         "sedentary": null,
@@ -2541,7 +2149,7 @@
       }
     },
     {
-      "dayIndex": 46,
+      "dayIndex": 39,
       "date": "2026-09-27",
       "wearable": {
         "sedentary": null,
@@ -2597,7 +2205,7 @@
       }
     },
     {
-      "dayIndex": 47,
+      "dayIndex": 40,
       "date": "2026-09-28",
       "wearable": {
         "sedentary": null,
@@ -2653,7 +2261,7 @@
       }
     },
     {
-      "dayIndex": 48,
+      "dayIndex": 41,
       "date": "2026-09-29",
       "wearable": {
         "sedentary": null,
@@ -2709,7 +2317,7 @@
       }
     },
     {
-      "dayIndex": 49,
+      "dayIndex": 42,
       "date": "2026-09-30",
       "wearable": {
         "sedentary": null,
@@ -2765,7 +2373,7 @@
       }
     },
     {
-      "dayIndex": 50,
+      "dayIndex": 43,
       "date": "2026-10-01",
       "wearable": {
         "sedentary": null,
@@ -2821,7 +2429,7 @@
       }
     },
     {
-      "dayIndex": 51,
+      "dayIndex": 44,
       "date": "2026-10-02",
       "wearable": {
         "sedentary": null,
@@ -2877,7 +2485,7 @@
       }
     },
     {
-      "dayIndex": 52,
+      "dayIndex": 45,
       "date": "2026-10-03",
       "wearable": {
         "sedentary": null,
@@ -2933,7 +2541,7 @@
       }
     },
     {
-      "dayIndex": 53,
+      "dayIndex": 46,
       "date": "2026-10-04",
       "wearable": {
         "sedentary": null,
@@ -2989,7 +2597,7 @@
       }
     },
     {
-      "dayIndex": 54,
+      "dayIndex": 47,
       "date": "2026-10-05",
       "wearable": {
         "sedentary": null,
@@ -3045,7 +2653,7 @@
       }
     },
     {
-      "dayIndex": 55,
+      "dayIndex": 48,
       "date": "2026-10-06",
       "wearable": {
         "sedentary": null,
@@ -3101,7 +2709,7 @@
       }
     },
     {
-      "dayIndex": 56,
+      "dayIndex": 49,
       "date": "2026-10-07",
       "wearable": {
         "sedentary": null,
@@ -3157,7 +2765,7 @@
       }
     },
     {
-      "dayIndex": 57,
+      "dayIndex": 50,
       "date": "2026-10-08",
       "wearable": {
         "sedentary": null,
@@ -3213,7 +2821,7 @@
       }
     },
     {
-      "dayIndex": 58,
+      "dayIndex": 51,
       "date": "2026-10-09",
       "wearable": {
         "sedentary": null,
@@ -3269,7 +2877,7 @@
       }
     },
     {
-      "dayIndex": 59,
+      "dayIndex": 52,
       "date": "2026-10-10",
       "wearable": {
         "sedentary": null,
@@ -3325,7 +2933,7 @@
       }
     },
     {
-      "dayIndex": 60,
+      "dayIndex": 53,
       "date": "2026-10-11",
       "wearable": {
         "sedentary": null,
@@ -3381,7 +2989,7 @@
       }
     },
     {
-      "dayIndex": 61,
+      "dayIndex": 54,
       "date": "2026-10-12",
       "wearable": {
         "sedentary": null,
@@ -3437,7 +3045,7 @@
       }
     },
     {
-      "dayIndex": 62,
+      "dayIndex": 55,
       "date": "2026-10-13",
       "wearable": {
         "sedentary": null,
@@ -3493,7 +3101,7 @@
       }
     },
     {
-      "dayIndex": 63,
+      "dayIndex": 56,
       "date": "2026-10-14",
       "wearable": {
         "sedentary": null,
@@ -3549,7 +3157,7 @@
       }
     },
     {
-      "dayIndex": 64,
+      "dayIndex": 57,
       "date": "2026-10-15",
       "wearable": {
         "sedentary": null,
@@ -3605,7 +3213,7 @@
       }
     },
     {
-      "dayIndex": 65,
+      "dayIndex": 58,
       "date": "2026-10-16",
       "wearable": {
         "sedentary": null,
@@ -3661,7 +3269,7 @@
       }
     },
     {
-      "dayIndex": 66,
+      "dayIndex": 59,
       "date": "2026-10-17",
       "wearable": {
         "sedentary": null,
@@ -3717,7 +3325,7 @@
       }
     },
     {
-      "dayIndex": 67,
+      "dayIndex": 60,
       "date": "2026-10-18",
       "wearable": {
         "sedentary": null,
@@ -3773,7 +3381,7 @@
       }
     },
     {
-      "dayIndex": 68,
+      "dayIndex": 61,
       "date": "2026-10-19",
       "wearable": {
         "sedentary": null,
@@ -3829,7 +3437,7 @@
       }
     },
     {
-      "dayIndex": 69,
+      "dayIndex": 62,
       "date": "2026-10-20",
       "wearable": {
         "sedentary": null,
@@ -3885,7 +3493,7 @@
       }
     },
     {
-      "dayIndex": 70,
+      "dayIndex": 63,
       "date": "2026-10-21",
       "wearable": {
         "sedentary": null,
@@ -3941,7 +3549,7 @@
       }
     },
     {
-      "dayIndex": 71,
+      "dayIndex": 64,
       "date": "2026-10-22",
       "wearable": {
         "sedentary": null,
@@ -3997,7 +3605,7 @@
       }
     },
     {
-      "dayIndex": 72,
+      "dayIndex": 65,
       "date": "2026-10-23",
       "wearable": {
         "sedentary": null,
@@ -4053,7 +3661,7 @@
       }
     },
     {
-      "dayIndex": 73,
+      "dayIndex": 66,
       "date": "2026-10-24",
       "wearable": {
         "sedentary": null,
@@ -4109,7 +3717,7 @@
       }
     },
     {
-      "dayIndex": 74,
+      "dayIndex": 67,
       "date": "2026-10-25",
       "wearable": {
         "sedentary": null,
@@ -4165,7 +3773,7 @@
       }
     },
     {
-      "dayIndex": 75,
+      "dayIndex": 68,
       "date": "2026-10-26",
       "wearable": {
         "sedentary": null,
@@ -4221,7 +3829,7 @@
       }
     },
     {
-      "dayIndex": 76,
+      "dayIndex": 69,
       "date": "2026-10-27",
       "wearable": {
         "sedentary": null,
@@ -4277,7 +3885,7 @@
       }
     },
     {
-      "dayIndex": 77,
+      "dayIndex": 70,
       "date": "2026-10-28",
       "wearable": {
         "sedentary": null,
@@ -4333,7 +3941,7 @@
       }
     },
     {
-      "dayIndex": 78,
+      "dayIndex": 71,
       "date": "2026-10-29",
       "wearable": {
         "sedentary": null,
@@ -4389,7 +3997,7 @@
       }
     },
     {
-      "dayIndex": 79,
+      "dayIndex": 72,
       "date": "2026-10-30",
       "wearable": {
         "sedentary": null,
@@ -4445,7 +4053,7 @@
       }
     },
     {
-      "dayIndex": 80,
+      "dayIndex": 73,
       "date": "2026-10-31",
       "wearable": {
         "sedentary": null,
@@ -4501,7 +4109,7 @@
       }
     },
     {
-      "dayIndex": 81,
+      "dayIndex": 74,
       "date": "2026-11-01",
       "wearable": {
         "sedentary": null,
@@ -4557,7 +4165,7 @@
       }
     },
     {
-      "dayIndex": 82,
+      "dayIndex": 75,
       "date": "2026-11-02",
       "wearable": {
         "sedentary": null,
@@ -4613,7 +4221,7 @@
       }
     },
     {
-      "dayIndex": 83,
+      "dayIndex": 76,
       "date": "2026-11-03",
       "wearable": {
         "sedentary": null,
@@ -4669,7 +4277,7 @@
       }
     },
     {
-      "dayIndex": 84,
+      "dayIndex": 77,
       "date": "2026-11-04",
       "wearable": {
         "sedentary": null,
@@ -4725,7 +4333,7 @@
       }
     },
     {
-      "dayIndex": 85,
+      "dayIndex": 78,
       "date": "2026-11-05",
       "wearable": {
         "sedentary": null,
@@ -4781,7 +4389,7 @@
       }
     },
     {
-      "dayIndex": 86,
+      "dayIndex": 79,
       "date": "2026-11-06",
       "wearable": {
         "sedentary": null,
@@ -4837,7 +4445,7 @@
       }
     },
     {
-      "dayIndex": 87,
+      "dayIndex": 80,
       "date": "2026-11-07",
       "wearable": {
         "sedentary": null,
@@ -4893,7 +4501,7 @@
       }
     },
     {
-      "dayIndex": 88,
+      "dayIndex": 81,
       "date": "2026-11-08",
       "wearable": {
         "sedentary": null,
@@ -4949,7 +4557,7 @@
       }
     },
     {
-      "dayIndex": 89,
+      "dayIndex": 82,
       "date": "2026-11-09",
       "wearable": {
         "sedentary": null,
@@ -5005,7 +4613,7 @@
       }
     },
     {
-      "dayIndex": 90,
+      "dayIndex": 83,
       "date": "2026-11-10",
       "wearable": {
         "sedentary": null,

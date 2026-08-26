@@ -59,8 +59,11 @@ server:
 # ============================================================================
 app:
   cors:
-    # 프론트 개발 서버(Vite). TODO: 운영 배포 시 실제 도메인으로 제한 (B-03)
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    # 프론트 개발 서버(Vite). ★ 포트를 못 박지 않는다 — Vite 는 지정 포트가 쓰이면
+    # 말없이 다음 포트로 옮겨가고(5173 은 Windows IP Helper 가 점유), 그때마다
+    # CORS 403 이 나서 "백엔드가 죽었나?" 로 오해하게 된다. WebConfig 주석 참고.
+    # TODO: 운영 배포 시 실제 도메인으로 제한 (B-03)
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
 
   ws:
     endpoint: /ws
@@ -69,12 +72,21 @@ app:
   model:
     # 파이썬 예측 서버. ⚠️ 내장 Mock 을 제거했으므로 이 주소가 살아 있어야 예측이 나온다.
     base-url: ${MODEL_BASE_URL:http://127.0.0.1:5000}
-    predict-path: ${MODEL_PREDICT_PATH:/predict}
+    # ★ GET /api/predict?days=N  — 모델팀 실제 서버(hormone-web-model/app.py) 기준.
+    #   예전 계약서의 POST /predict 는 폐기됐다.
+    predict-path: ${MODEL_PREDICT_PATH:/api/predict}
+    health-path: ${MODEL_HEALTH_PATH:/api/health}
+    # 일차를 싣는 쿼리 파라미터 이름. 이름은 days 그대로고 의미만 바뀌었다
+    # (예전: 1~N일 전체 / 지금: N일차 하나). 이름이 day 로 바뀌면 MODEL_DAY_PARAM=day.
+    day-param: ${MODEL_DAY_PARAM:days}
     # ★ 일차 정렬 보정. 파이썬에 보낼 일차 = 백엔드 Day + 이 값.
-    #   백엔드 Day 1 = day_in_study 862 인데 id=22 의 2024 구간은 852 부터 시작한다.
-    #   파이썬이 구간 처음부터 세면 10, 우리와 같은 90일 창을 쓰면 0.
-    #   확인 문장: "45를 보내면 day_in_study 몇 번까지 쓰나요?" (906->0 / 896->10)
+    #   0 이 정답이다 — 시드를 모델 기준(day_index 1 = day_in_study 869)에 맞춰
+    #   앞 7일을 잘라냈다(90일 -> 83일). 즉 웹 Day N == 모델 day_index N.
+    #   모델팀이 기준일을 바꾸면 여기서 흡수한다(재빌드 불필요).
     day-offset: ${MODEL_DAY_OFFSET:0}
+    # 모델이 modelVersion 을 안 줄 때 헤더 배지에 쓸 이름. 모델이 주면 그쪽이 이긴다.
+    # ⚠️ 모델이 교체되면 이 값도 손으로 같이 고칠 것 (자동으로 안 바뀐다).
+    fallback-version: ${MODEL_VERSION_LABEL:python-v1}
     connect-timeout-ms: 3000
     read-timeout-ms: 30000
     # TODO: 인증 방식 모델팀 확인. 비어 있으면 헤더를 붙이지 않는다.
@@ -83,9 +95,12 @@ app:
   demo:
     user-id: 1
     start-date: 2026-08-13
-    # 시드가 있으면 seed_data.json 의 totalDays(90)가 이깁니다. 이 값은 시드가 없을 때만 씁니다.
-    total-days: 90
-    cold-start-days: 20
+    # 시드가 있으면 seed_data.json 의 값이 이깁니다. 아래는 시드가 없을 때만 씁니다.
+    # 83 = day_in_study 869~951. 모델 day_index 1 이 869 라 거기에 맞췄다(§day-offset).
+    total-days: 83
+    # 15 = 첫 예측이 Day 15. 모델에 days=15 가 나가야 E3G(estrogen)가 응답에 포함된다
+    # (E3G 는 앞 14일을 캘리브레이션에 쓴다). LH 1차 서지는 Day 21.
+    cold-start-days: 15
 
 # ============================================================================
 # Claude API — L-07(의학 어드바이스) 용. 현재 코드에서 사용처 없음.
@@ -103,7 +118,9 @@ anthropic:
   # 조언에 실어 보낼 웨어러블 일수. 일차가 늘어도 이 값으로 고정돼 비용이 일정하다.
   # 30일 ≈ 호출당 9천~1만 토큰.
   history-days: ${ADVICE_HISTORY_DAYS:30}
-  max-tokens: ${ADVICE_MAX_TOKENS:2000}
+  # §9-9: 1200 -> 2000 으로 올렸는데도 지금 Sonnet 이 400자 지시를 넘겨서 다시 잘렸다
+  # (실측: 2000 토큰 꽉 채우고 문장 중간 절단). 4000 으로 재상향.
+  max-tokens: ${ADVICE_MAX_TOKENS:4000}
   read-timeout-ms: 60000
 
 logging:

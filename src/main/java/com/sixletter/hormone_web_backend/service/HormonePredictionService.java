@@ -155,7 +155,11 @@ public class HormonePredictionService {
                 .user(user)
                 .targetDate(targetDate)
                 .dayInStudy(dayInStudy)
-                .modelVersion(r.modelVersion())
+                // 모델이 버전을 주면 그걸 쓰고, 없으면 설정값으로 채운다(ModelProperties 참고).
+                // 배지를 비워두면 "어떤 모델이 도는지" 알 수 없게 된다.
+                .modelVersion(r.modelVersion() != null && !r.modelVersion().isBlank()
+                        ? r.modelVersion()
+                        : modelProperties.getFallbackVersion())
                 .rawResponse(toMap(r));
 
         b.lh(r.lh()).estrogen(r.estrogen()).pdg(r.pdg());
