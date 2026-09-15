@@ -1171,3 +1171,84 @@ hormone_web/
 > ★ **피처를 추가·변경할 때는 두 파일을 같이 고친다** —
 > 백엔드 `WearableFeatures.java`(DB 컬럼명)와 프론트 `wearableCatalog.js`(라벨·단위·그룹).
 > **키가 1:1 로 맞아야 한다.** 현재 44/44 일치.
+
+---
+
+## 프로젝트 소개 (요약)
+
+웨어러블 생체신호로 여성호르몬(LH · E3G · PdG)과 생리주기 단계를 예측해 보여주는 PoC의 API 서버입니다. 파이썬 예측 모델을 호출하고, 결과를 저장해 대시보드로 실시간 전달합니다.
+
+- NVIDIA AI 전문인력 양성과정 기업 연계 PoC (식스레터스)
+- 2026.08.14 – 2026.08.28 · 6인 · 과정 우수상
+- 담당: 배지훈 (데이터 전처리 · 백엔드 · 대시보드)
+- 데이터: mcPHASES (여성 42명, 웨어러블 + 호르몬 측정값)
+- 시연 영상: https://drive.google.com/file/d/11w_eEh9f-VIQdsKwakZPuvsIdu0UWpgF/view?usp=drive_link
+
+### 기술 스택
+
+Java 21 · Spring Boot 4.1 · Spring Data JPA · MySQL 8 · WebSocket(STOMP) · Claude API · Gradle
+
+### 동작 흐름
+
+```
+[하루 넘기기] POST /api/demo/users/{id}/advance  → 202
+   → 그날의 웨어러블 값을 wearable_daily에 적재
+   → 파이썬 예측 서버 호출  (body: {"day": N})
+   → 예측 결과 저장 → /topic/prediction/{id} 로 STOMP 푸시
+```
+
+- Day 1~19는 웨어러블 값만 쌓는 콜드스타트 구간이고, Day 20부터 예측합니다.
+- 호르몬 실측값은 모델 입력에 쓰지 않고, 예측 정확도 채점에만 씁니다.
+
+### 주요 API
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/demo/users/{id}/state` | 현재 일차와 상태 |
+| POST | `/api/demo/users/{id}/advance` | 하루 넘기기 (202) |
+| POST | `/api/demo/users/{id}/reset` | Day 0으로 초기화 |
+| GET | `/api/demo/users/{id}/timeline` | 화면 구성용 전체 스냅샷 |
+| GET | `/api/demo/users/{id}/jobs` | 예측 요청 이력 |
+| GET/POST | `/api/advice/users/{id}` | Claude 생활 조언 조회·생성 (하루 1건 캐시) |
+| GET | `/api/predictions/users/{id}/latest` | 최신 예측 (웹소켓 대체 경로) |
+| WS | `/ws` → `/topic/prediction/{id}` | 예측 완료·실패 푸시 |
+
+### 예측 모델 연동
+
+- 예측 모델(파이썬)은 모델팀이 담당했고, 이 서버는 HTTP로 호출합니다.
+- 응답에 필드가 추가되거나 형태가 조금 달라도 받아들이도록 파싱합니다. `PythonResponseParsingTest` 12건으로 고정해 두었습니다.
+
+```jsonc
+// 응답 예시
+{
+  "lh": 6.2, "estrogen": 88.6, "pdg": 3.8,
+  "phase": "Fertility",            // Menstrual | Follicular | Fertility | Luteal
+  "confidence": 0.87,
+  "contributions": [{ "feature": "rmssd", "weight": 0.42, "direction": "down" }],
+  "modelVersion": "v0.3"
+}
+```
+
+### 실행
+
+```sql
+CREATE DATABASE IF NOT EXISTS hormone_web DEFAULT CHARACTER SET utf8mb4;
+```
+
+```bash
+cp src/main/resources/application-local.yaml.example src/main/resources/application-local.yaml
+# DB 비밀번호, Anthropic 키 입력
+./gradlew bootRun              # http://localhost:8085
+```
+
+| 환경변수 | 기본값 | 설명 |
+|---|---|---|
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | `localhost:3306/hormone_web` / `root` / (없음) | MySQL |
+| `SERVER_PORT` | `8085` | |
+| `MODEL_BASE_URL` | `http://127.0.0.1:5000` | 파이썬 예측 서버 |
+| `MODEL_PREDICT_PATH` | `/api/predict` | |
+| `ANTHROPIC_API_KEY` | (없음) | 비워 두면 조언 기능만 꺼짐 |
+
+### 관련 저장소
+
+- Frontend: https://github.com/DLI-6Letters/hormone-web-frontend
